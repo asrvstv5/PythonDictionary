@@ -76,11 +76,51 @@ class DictionaryApp:
         else:
             meaning = "No meaning found."
 
-        usage = self._extract_text(soup, "css-1tw6lmu e1q3nk1v3", "No usage examples found.")
-        synonyms = self._extract_text(soup, "css-1jzk4d8 el3670a0", "No synonyms found.")
-        antonyms = self._extract_text(soup, "css-1fvt1er e1olj22f4", "No antonyms found.")
+        meaning = "-" + meaning
+        # usage = self._extract_text(soup, "css-1tw6lmu e1q3nk1v3", "No usage examples found.")
+        usage = self.extract_usage(soup)
+        # Extract synonyms from the meaning text
+        synonyms = self.extract_synonyms(meaning)
+        antonyms = self.extract_antonyms(meaning)
 
         return meaning, usage, synonyms, antonyms
+
+    def extract_usage(self, soup):
+        usage_section = soup.find('section', {'data-type': 'example-sentences-module'})
+        if usage_section:
+            examples = usage_section.find_all('div')
+            usage_examples = [div.find('p').text for div in examples if div.find('p')]
+            return "\n-".join(usage_examples) if usage_examples else "No usage examples found."
+        else:
+            return "No usage examples found."
+
+    def extract_synonyms(self, text):
+        """Extract synonyms from the text based on the 'Synonyms:' keyword."""
+        start_index = text.find("Synonyms:")
+        if start_index == -1:
+            return "No synonyms found."
+        
+        start_index += len("Synonyms:")
+        end_index = text.find("Antonyms:", start_index)
+        if end_index == -1:
+            end_index = len(text)
+        
+        synonyms_text = text[start_index:end_index].strip()
+        return synonyms_text if synonyms_text else "No synonyms found."
+    
+    def extract_antonyms(self, text):
+        """Extract antonyms from the text based on the 'Antonyms:' keyword."""
+        start_index = text.find("Antonyms:")
+        if start_index == -1:
+            return "No antonyms found."
+        
+        start_index += len("Antonyms:")
+        end_index = text.find("\n", start_index)
+        if end_index == -1:
+            end_index = len(text)
+        
+        synonyms_text = text[start_index:end_index].strip()
+        return synonyms_text if synonyms_text else "No antonyms found."
 
     def _extract_text(self, soup, class_name, default_text):
         """Extract text from a BeautifulSoup object by class name."""
